@@ -86,3 +86,6 @@ python demo.py
 ```
 
 This will start the agent and give you further steps on how to use the agent.
+
+## Demo:
+https://github.com/user-attachments/assets/d9730362-5310-4312-9e71-7c11e8d726c3

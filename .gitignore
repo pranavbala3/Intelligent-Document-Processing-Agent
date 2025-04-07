@@ -1,0 +1,8 @@
+.venv
+.env
+chroma_db
+doc_cache
+rag_cache
+.newvenv
+__pycache__
+.DS_Store

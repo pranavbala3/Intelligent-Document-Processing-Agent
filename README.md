@@ -8,10 +8,17 @@ The architecture primarily consists of three modular components:
 2. **Information Extraction Module**: Utilizes NLP techniques to extract structured information such as titles, abstracts, sections, tables, and references.
 3. **Query Processing Module**: Implements a Retrieval-Augmented Generation (RAG) model to handle intelligent queries by retrieving relevant context and generating responses based on user inputs.
 
+### Rationale on Why I Used a RAG-Based Approach:
+This came down to a few main points:
+
+1. By retrieving relevant document segments before generation, RAG significantly reduces hallucinations and factual errors compared to strictly generative approaches.
+2. RAG enables traceability between generated answers and source material, improving user trust and facilitating verification.
+3. Rather than processing entire documents for each query, RAG identifies and processes only the most relevant sections, reducing computational overhead.
+
 ## Information Extraction and Query Processing Steps
 
 ### Information Extraction
-- PDFs are processed using `page_processor.py` and `document_parser.py`. The pipeline extracts text, preserves structural components such as tables, figures and references.
+- PDFs are processed using `page_processor.py` and `document_parser.py`. The pipeline extracts text and preserves structural components such as tables, figures and references.
 - This is a hybrid approach: First, use text extraction libraries to extract text from documents. Then, identify whether additional processing is needed based on certain characteristics:
   *   detection of grid-like structure via computer vision techniques
   *   whitespace pattern analysis
@@ -21,7 +28,7 @@ The architecture primarily consists of three modular components:
   *   PDF pages are converted to high-quality JPEG images
   *   The Gemini model analyzes visual elements including tables, figures, and complex layouts
   *   Structured JSON output identifies all layout elements with descriptions
-- Pages are processed parallely `ProcessPoolExecutor`.
+- Pages are processed parallely using `ProcessPoolExecutor`.
 
 ### Query Processing
 - The agent uses a RAG approach implemented in `rag.py`. This module indexes extracted information and uses embeddings to retrieve relevant content.
@@ -31,6 +38,9 @@ The architecture primarily consists of three modular components:
   * Retrieving documents, metadata, and similarity scores
 - The agent then processes the retrieved results to prepare them for the generative model. For "complex" context, the agent retrieves relevant document images corresponding to the pages where information was found.
 - Finally, the agent constructs a multimodal context for the generative model that includes the text from the retrieved documents, relevant images, and the query.
+
+## Evaluation
+To evaluate the performance of the agent, I first tested the document parsing and query processing steps separately. I then manually tested different prompts such as comparisons, summarizations, and evaluation result extractions and checked whether the agent was returning high similarity documents and the correct figures, tables, and/or images.
 
 ## Challenges and Solutions
 - **Challenge**: Efficiently parsing and extract information from documents. Initially, I had made a structure that involved taking images of the pages of the document and then using a LLM to label sections as figures, tables, abstract, introduction, methods, etc. This was also causing rate limiting problems with the Gemini API. 
@@ -43,7 +53,7 @@ The architecture primarily consists of three modular components:
   - **Solution**: Implementing a comprehensive caching system with components to document state caching to store processed document information, hashing to identify document changes efficiently, an indexed document tracking system to avoid reprocessing.
 
 ## Things to Work On
-- **Long time to index documents**: Indexing documents into the vector database is quite time-consuming and I did not find a good work around to this. I tried to make the indexing parallel too but still takes about 3-4 mins to process a doucment ~15-20 pages. However, that is why I implemented a persistent ChromaDB client and caching to prevent the need for documents to be repeatedly processed if the user has already inputted a document prior. As a result, user prompts are being answer in 5-6 seconds.
+- **Long time to index documents**: Indexing documents into the vector database is quite time-consuming and I did not find a good work around to this. I tried to make the indexing parallel too but still takes about 3-4 mins to process a doucment ~15-20 pages. However, that is why I implemented a persistent ChromaDB client and caching to prevent the need for documents to be repeatedly processed if the user has already inputted a document prior. So although indexing takes time, this is a "one-and-done" process. As a result, user prompts are being answer in 5-6 seconds.
 
 ## Instructions for Setup and Running the Agent
 
